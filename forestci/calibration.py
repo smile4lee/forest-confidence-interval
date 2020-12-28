@@ -170,8 +170,8 @@ def calibrateEB(variances, sigma2):
     if (sigma2 <= 0 or min(variances) == max(variances)):
         return(np.maximum(variances, 0))
     sigma = np.sqrt(sigma2)
-    # eb_prior = gfit(variances, sigma, p=1)
-    eb_prior = gfit(variances, sigma)
+    eb_prior = gfit(variances, sigma, p=1)
+    # eb_prior = gfit(variances, sigma)
     # Set up a partial execution of the function
     part = functools.partial(gbayes, g_est=eb_prior,
                              sigma=sigma)

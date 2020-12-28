@@ -110,7 +110,7 @@ rfr = joblib.load(model_file)
 
 # In[19]:
 
-n_trees = 100
+n_trees = 1000
 
 def do_fci():
     # Calculate the variance
@@ -132,7 +132,7 @@ def do_fci():
     pd.options.display.max_columns = df_test.shape[1]
     print(df_test.describe())
     out_csv = r"out/out.{0}.csv".format(n_trees)
-    df_test.describe().to_csv(out_csv, index=True, header=True, sep=',')
+    df_test.describe().to_csv(out_csv, index=True, header=True, sep=',', float_format='%.3f')
 
 
 if __name__ == '__main__':
