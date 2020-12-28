@@ -274,10 +274,6 @@ def random_forest_error(
         inbag = calc_inbag(X_train.shape[0], forest)
 
     pred = np.array([tree.predict(X_test) for tree in forest]).T
-
-    # the final predictions in forest
-    # pred_mean_t = np.mean(pred, axis=1)
-
     pred_mean = np.mean(pred, 0)
     pred_centered = pred - pred_mean
     n_trees = forest.n_estimators
@@ -285,14 +281,6 @@ def random_forest_error(
         X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
     )
     V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees)
-
-    import pandas as pd
-    # df_tmp = pd.DataFrame()
-    # df_tmp['ini'] = V_IJ
-    # df_tmp['ini_sqrt'] = np.sqrt(V_IJ)
-    # df_tmp['unbiased'] = V_IJ_unbiased
-    # df_tmp['unbiased_sqrt'] = np.sqrt(V_IJ_unbiased)
-    # print(df_tmp.describe())
 
     # Correct for cases where resampling is done without replacement:
     if np.max(inbag) == 1:
@@ -310,12 +298,9 @@ def random_forest_error(
         calibration_ratio = 2
         n_sample = np.ceil(n_trees / calibration_ratio)
         new_forest = copy.deepcopy(forest)
-        # random_idx = np.random.permutation(len(new_forest.estimators_))[: int(n_sample)]
-        # random_idx = np.random.RandomState(seed=1).permutation(len(new_forest.estimators_))[: int(n_sample)]
-        random_idx = np.random.RandomState(seed=42).permutation(len(new_forest.estimators_))[: int(n_sample)]
+        random_idx = np.random.permutation(len(new_forest.estimators_))[: int(n_sample)]
         new_forest.estimators_ = list(np.array(new_forest.estimators_)[random_idx])
         if hasattr(new_forest, "_seeds"):
-            # print("has _seeds")
             new_forest._seeds = new_forest._seeds[random_idx]
 
         new_forest.n_estimators = int(n_sample)
@@ -337,4 +322,4 @@ def random_forest_error(
         # Use Monte Carlo noise scale estimate for empirical Bayes calibration
         V_IJ_calibrated = calibrateEB(V_IJ_unbiased, sigma2)
 
-        return V_IJ_calibrated # , pred_mean_t
+        return V_IJ_calibrated

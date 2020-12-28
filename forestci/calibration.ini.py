@@ -35,7 +35,6 @@ _due.cite(_BibTeX("""
 def gfit(X, sigma, p=5, nbin=200, unif_fraction=0.1):
     """
     Fit empirical Bayes prior in the hierarchical model [Efron2014]_.
-    B Efron. Two modeling strategies for empirical Bayes estimation. Stat. Sci., 29(2): 285–301, 2014
 
     .. math::
 
@@ -74,34 +73,20 @@ def gfit(X, sigma, p=5, nbin=200, unif_fraction=0.1):
     else:
         noise_rotate = noise_kernel
 
-    XX = np.zeros((p, len(xvals)), dtype=np.float64)
+    XX = np.zeros((p, len(xvals)), dtype=np.float)
     for ind, exp in enumerate(range(1, p+1)):
         mask = np.ones_like(xvals)
         mask[np.where(xvals <= 0)[0]] = 0
         XX[ind, :] = pow(xvals, exp) * mask
     XX = XX.T
 
-    # import pandas as pd
-    # df_XX = pd.DataFrame(XX)
-    # print("============= XX ===========")
-    # pd.options.display.max_columns = df_XX.shape[1]
-    # print(df_XX.describe(include='all'))
-
     def neg_loglik(eta):
         mask = np.ones_like(xvals)
         mask[np.where(xvals <= 0)[0]] = 0
-        exponent = np.dot(XX, eta)
-        g_eta_raw = np.exp(exponent) * mask
-
-        # print("eta, min: %s, max: %s" % (min(eta), max(eta)))
-        # print("mask, min: %s, max: %s" % (min(mask), max(mask)))
-        # print("exponent, min: %s, max: %s" % (min(exponent), max(exponent)))
-        # print("g_eta_raw, min: %s, max: %s" % (min(g_eta_raw), max(g_eta_raw)))
-
+        g_eta_raw = np.exp(np.dot(XX, eta)) * mask
         if ((np.sum(g_eta_raw) == np.inf) |
             (np.sum(g_eta_raw) <=
                 100 * np.finfo(np.double).tiny)):
-                # print("inf returned")
                 return (1000 * (len(X) + sum(eta ** 2)))
 
         g_eta_main = g_eta_raw / sum(g_eta_raw)
@@ -113,14 +98,7 @@ def gfit(X, sigma, p=5, nbin=200, unif_fraction=0.1):
 
     eta_hat = minimize(neg_loglik,
                        list(itertools.repeat(-1, p))).x
-
-    exponent = np.dot(XX, eta_hat)
-    # print("===============")
-    # print("eta_hat, min: %s, max: %s" % (min(eta_hat), max(eta_hat)))
-    # print("exponent, min: %s, max: %s" % (min(exponent), max(exponent)))
-
-    g_eta_raw = np.exp(exponent) * mask
-    a = sum(g_eta_raw)
+    g_eta_raw = np.exp(np.dot(XX, eta_hat)) * mask
     g_eta_main = g_eta_raw / sum(g_eta_raw)
     g_eta = ((1 - unif_fraction) * g_eta_main +
              unif_fraction * mask) / sum(mask)
@@ -170,7 +148,6 @@ def calibrateEB(variances, sigma2):
     if (sigma2 <= 0 or min(variances) == max(variances)):
         return(np.maximum(variances, 0))
     sigma = np.sqrt(sigma2)
-    # eb_prior = gfit(variances, sigma, p=1)
     eb_prior = gfit(variances, sigma)
     # Set up a partial execution of the function
     part = functools.partial(gbayes, g_est=eb_prior,
