@@ -74,3 +74,4 @@ paper/*.txt
 
 # Jupiter notebooks
 .ipynb_checkpoints
+.idea
