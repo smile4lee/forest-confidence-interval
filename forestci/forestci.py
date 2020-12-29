@@ -161,7 +161,7 @@ def _core_computation(
         print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0)
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0).round(0).astype(int)
             for chunk in chunks
         ]
     )
@@ -278,7 +278,7 @@ def random_forest_error(
     import datetime
     print(datetime.datetime.now())
     print("pred with all trees starting")
-    # pred = np.array([tree.predict(X_test) for tree in forest]).T
+    # pred = np.array([tree.predict(X_test) for tree in forest]).T.round(0).astype(int)
 
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X)
@@ -292,7 +292,7 @@ def random_forest_error(
     res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
        delayed(_predict_by_tree)(tree, X_test)
        for tree in forest)
-    pred = np.array(res).T
+    pred = np.array(res).T.round(0).astype(int)
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
@@ -300,13 +300,13 @@ def random_forest_error(
     print(datetime.datetime.now())
     print("pred with all trees finished")
 
-    pred_mean = np.mean(pred, 0)
-    pred_centered = pred - pred_mean
+    pred_mean = np.mean(pred, 0).round(0).astype(int)
+    pred_centered = (pred - pred_mean).round(0).astype(int)
     n_trees = forest.n_estimators
     V_IJ = _core_computation(
         X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
-    )
-    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees)
+    ).round(0).astype(int)
+    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(int)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
