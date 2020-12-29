@@ -1,3 +1,3 @@
 #!/bin/bash
 
-pip uninstall foresci && python setup.py install
+pip uninstall -y foresci && python setup.py install

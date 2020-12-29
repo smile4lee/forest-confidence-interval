@@ -275,16 +275,16 @@ def random_forest_error(
     if inbag is None:
         inbag = calc_inbag(X_train.shape[0], forest)
 
-    # pred = np.array([tree.predict(X_test) for tree in forest]).T
+    pred = np.array([tree.predict(X_test) for tree in forest]).T
 
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X)
     # Parallel loop, returns values as a list
-    res = Parallel(n_jobs=forest.n_jobs, verbose=forest.verbose, prefer='threads')(
-        delayed(_predict_by_tree)(tree, X_test)
-        for tree in forest)
+    # res = Parallel(n_jobs=forest.n_jobs, verbose=forest.verbose, prefer='threads')(
+    #    delayed(_predict_by_tree)(tree, X_test)
+    #    for tree in forest)
 
-    pred = np.array(res).T
+    # pred = np.array(res).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
