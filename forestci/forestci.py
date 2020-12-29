@@ -92,14 +92,14 @@ def calc_inbag(n_samples, forest):
 
 
 def _core_computation(
-    X_train,
-    X_test,
-    inbag,
-    pred_centered,
-    n_trees,
-    memory_constrained=False,
-    memory_limit=None,
-    test_mode=False,
+        X_train,
+        X_test,
+        inbag,
+        pred_centered,
+        n_trees,
+        memory_constrained=False,
+        memory_limit=None,
+        test_mode=False,
 ):
     """
     Helper function, that performs the core computation
@@ -155,13 +155,14 @@ def _core_computation(
     chunk_edges = np.arange(0, X_test.shape[0] + chunk_size, chunk_size)
     inds = range(X_test.shape[0])
     chunks = [
-        inds[chunk_edges[i] : chunk_edges[i + 1]] for i in range(len(chunk_edges) - 1)
+        inds[chunk_edges[i]: chunk_edges[i + 1]] for i in range(len(chunk_edges) - 1)
     ]
     if test_mode:
         print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0)
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T).round(0).astype(int) / n_trees) ** 2, 0)
+                .round(0).astype(int)
             for chunk in chunks
         ]
     )
@@ -203,13 +204,13 @@ def _bias_correction(V_IJ, inbag, pred_centered, n_trees):
 
 
 def random_forest_error(
-    forest,
-    X_train,
-    X_test,
-    inbag=None,
-    calibrate=True,
-    memory_constrained=False,
-    memory_limit=None,
+        forest,
+        X_train,
+        X_test,
+        inbag=None,
+        calibrate=True,
+        memory_constrained=False,
+        memory_limit=None,
 ):
     """
     Calculate error bars from scikit-learn RandomForest estimators.
@@ -279,23 +280,24 @@ def random_forest_error(
 
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X)
+
     # Parallel loop, returns values as a list
     # res = Parallel(n_jobs=forest.n_jobs, verbose=forest.verbose, prefer='threads')(
     #    delayed(_predict_by_tree)(tree, X_test)
     #    for tree in forest)
 
-    # pred = np.array(res).T
+    pred = np.array(res).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
 
-    pred_mean = np.mean(pred, 0)
+    pred_mean = np.mean(pred, 0).round(0).astype(int)
     pred_centered = pred - pred_mean
     n_trees = forest.n_estimators
     V_IJ = _core_computation(
         X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
-    )
-    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees)
+    ).round(0).astype(int)
+    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(int)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
@@ -348,4 +350,4 @@ def random_forest_error(
         # Use Monte Carlo noise scale estimate for empirical Bayes calibration
         V_IJ_calibrated = calibrateEB(V_IJ_unbiased, sigma2)
 
-        return V_IJ_calibrated # , pred_mean_t
+        return V_IJ_calibrated  # , pred_mean_t
