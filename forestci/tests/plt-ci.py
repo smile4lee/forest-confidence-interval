@@ -111,7 +111,7 @@ rfr = joblib.load(model_file)
 
 # In[19]:
 
-n_trees = 2000
+n_trees = 100
 
 def do_fci():
     # Calculate the variance
@@ -119,12 +119,12 @@ def do_fci():
     rfr.n_estimators = n_trees
     rfr.fit(X_train, Y_train)
     pred_test = rfr.predict(X_test).round(0).astype(int)
-    mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test)
+    mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test).round(0).astype(int)
     # mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test, calibrate=False)
 
     df_test['pred_test'] = pred_test
     df_test['mpg_V_IJ_unbiased'] = mpg_V_IJ_unbiased
-    df_test['mpg_V_IJ_unbiased_sqrt'] = np.sqrt(mpg_V_IJ_unbiased)
+    df_test['mpg_V_IJ_unbiased_sqrt'] = np.sqrt(mpg_V_IJ_unbiased).round(0).astype(int)
     # df_test['lower'] = interval[0]
     # df_test['upper'] = interval[1]
     # df_test['diff'] = df_test['yield_pred'] - mpg_y_hat
