@@ -161,8 +161,7 @@ def _core_computation(
         print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T).round(0).astype(int) / n_trees) ** 2, 0)
-                .round(0).astype(int)
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0)
             for chunk in chunks
         ]
     )
@@ -276,28 +275,38 @@ def random_forest_error(
     if inbag is None:
         inbag = calc_inbag(X_train.shape[0], forest)
 
-    pred = np.array([tree.predict(X_test) for tree in forest]).T
+    import datetime
+    print(datetime.datetime.now())
+    print("pred with all trees starting")
+    # pred = np.array([tree.predict(X_test) for tree in forest]).T
 
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X)
 
-    # Parallel loop, returns values as a list
-    # res = Parallel(n_jobs=forest.n_jobs, verbose=forest.verbose, prefer='threads')(
-    #    delayed(_predict_by_tree)(tree, X_test)
-    #    for tree in forest)
+    job_limit = 200
+    n_jobs = forest.n_jobs
+    if n_jobs != -1 and n_jobs > job_limit:
+        n_jobs = job_limit
 
+    # Parallel loop, returns values as a list
+    res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
+       delayed(_predict_by_tree)(tree, X_test)
+       for tree in forest)
     pred = np.array(res).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
 
-    pred_mean = np.mean(pred, 0).round(0).astype(int)
+    print(datetime.datetime.now())
+    print("pred with all trees finished")
+
+    pred_mean = np.mean(pred, 0)
     pred_centered = pred - pred_mean
     n_trees = forest.n_estimators
     V_IJ = _core_computation(
         X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
-    ).round(0).astype(int)
-    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(int)
+    )
+    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
