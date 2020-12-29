@@ -111,9 +111,9 @@ rfr = joblib.load(model_file)
 
 # In[19]:
 
-n_trees = 100
+n_trees_list = [100, 200, 500, 1000, 1500, 2000]
 
-def do_fci():
+def do_fci(n_trees):
     # Calculate the variance
     # mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test)
     rfr.n_estimators = n_trees
@@ -133,12 +133,14 @@ def do_fci():
     pd.options.display.max_columns = df_test.shape[1]
     print(df_test.describe())
     out_csv = r"out/out.{0}.csv".format(n_trees)
-    df_test.describe().to_csv(out_csv, index=True, header=True, sep=',', float_format='%.3f')
+    df_test.describe().to_csv(out_csv, index=True, header=True, sep=',', float_format='%.0f')
 
 
 if __name__ == '__main__':
     # main()
 
-    do_fci()
+    for n_tree in n_trees_list:
+        print("====== n_trees: %s" % n_tree)
+        do_fci(n_tree)
 
 
