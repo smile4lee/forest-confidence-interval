@@ -278,21 +278,21 @@ def random_forest_error(
     import datetime
     print(datetime.datetime.now())
     print("pred with all trees starting")
-    # pred = np.array([tree.predict(X_test) for tree in forest]).T.round(0).astype(int)
+    pred = np.array([tree.predict(X_test) for tree in forest]).T.round(0).astype(int)
 
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X)
 
-    job_limit = 200
+    job_limit = 100
     n_jobs = forest.n_jobs
     if n_jobs != -1 and n_jobs > job_limit:
         n_jobs = job_limit
 
     # Parallel loop, returns values as a list
-    res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
-       delayed(_predict_by_tree)(tree, X_test)
-       for tree in forest)
-    pred = np.array(res).T.round(0).astype(int)
+   # res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
+    #   delayed(_predict_by_tree)(tree, X_test)
+     #  for tree in forest)
+#    pred = np.array(res).T.round(0).astype(int)
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
