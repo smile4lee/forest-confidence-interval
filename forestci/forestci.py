@@ -356,7 +356,7 @@ def random_forest_error(
         inbag = calc_inbag(X_train.shape[0], forest)
 
     print(datetime.datetime.now())
-    print("pred with all trees starting, calibrate: %s" % calibrate)
+    print("pred with all trees starting, parallel: %s, calibrate: %s" % (parallel, calibrate))
 
     dtype = 'int'
 
