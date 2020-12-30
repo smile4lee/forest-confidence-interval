@@ -285,24 +285,24 @@ def random_forest_error(
 
     dtype = 'int'
 
-    # pred = np.array([tree.predict(X_test) for tree in forest], dtype=dtype)
+    pred = np.array([tree.predict(X_test) for tree in forest], dtype=dtype)
 
 
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X).round(0).astype(dtype)
 
     # Parallel loop, returns values as a list
-    job_limit = 100
-    n_jobs = forest.n_jobs
-    if n_jobs == -1 and forest.n_estimators > job_limit:
-        n_jobs = job_limit
-    if n_jobs != -1 and n_jobs > job_limit:
-        n_jobs = job_limit
-    print("n_jobs: %s" % n_jobs)
-    res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
-        delayed(_predict_by_tree)(tree, X_test)
-        for tree in forest)
-    pred = np.array(res, dtype=dtype).T
+    # job_limit = 100
+    # n_jobs = forest.n_jobs
+    # if n_jobs == -1 and forest.n_estimators > job_limit:
+    #     n_jobs = job_limit
+    # if n_jobs != -1 and n_jobs > job_limit:
+    #     n_jobs = job_limit
+    # print("n_jobs: %s" % n_jobs)
+    # res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
+    #     delayed(_predict_by_tree)(tree, X_test)
+    #     for tree in forest)
+    # pred = np.array(res, dtype=dtype).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
