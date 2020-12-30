@@ -15,7 +15,6 @@ from sklearn.ensemble._bagging import BaseBagging
 
 from .calibration import calibrateEB
 from .due import _due, _BibTeX
-import datetime
 
 from joblib import effective_n_jobs, Parallel, delayed
 
@@ -207,79 +206,6 @@ def _bias_correction(V_IJ, inbag, pred_centered, n_trees):
     return V_IJ_unbiased
 
 
-def _cal_V_IJ_and_unbiased_by_chunk(X_train,
-        X_test,
-        inbag,
-        pred_centered,
-        n_trees,
-        memory_limit=None,
-        dtype='int'):
-
-    # Assumes double precision float
-    chunk_size = int((memory_limit * 1e6) / (8.0 * X_train.shape[0]))
-
-    if chunk_size == 0:
-        min_limit = 8.0 * X_train.shape[0] / 1e6
-        raise ValueError(
-            "memory_limit provided is too small."
-            + "For these dimensions, memory_limit must "
-            + "be greater than or equal to %.3e" % min_limit
-        )
-
-    print("chunk_size: %s" % chunk_size)
-
-    chunk_edges = np.arange(0, X_test.shape[0] + chunk_size, chunk_size)
-    inds = range(X_test.shape[0])
-    chunks = [
-        inds[chunk_edges[i]: chunk_edges[i + 1]] for i in range(len(chunk_edges) - 1)
-    ]
-    print("Number of chunks: %d" % (len(chunks),))
-    V_IJ = np.concatenate(
-        [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
-            for chunk in chunks
-        ]
-    )
-
-    ######################################################## _bias_correction
-    print(datetime.datetime.now())
-    print("_bias_correction")
-    n_train_samples = inbag.shape[0]
-    n_var = np.mean(
-        np.square(inbag[0:n_trees]).mean(axis=1).T.view()
-        - np.square(inbag[0:n_trees].mean(axis=1)).T.view()
-    )
-    # boot_var = np.square(pred_centered).sum(axis=1) / n_trees
-    # bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(int)
-    # V_IJ_unbiased = V_IJ - bias_correction
-
-    V_IJ_unbiased = np.zeros(len(V_IJ), dtype=dtype)
-    for chunk in chunks:
-        boot_var = np.square(pred_centered[chunk]).sum(axis=1) / n_trees
-        bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(int)
-        V_IJ_unbiased[chunk] = V_IJ[chunk] - bias_correction
-
-    return V_IJ, V_IJ_unbiased
-
-
-def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int'):
-    def _predict_by_tree(_tree, _X):
-        return _tree.predict(_X).astype(dtype)
-
-    # Parallel loop, returns values as a list
-    n_jobs = forest.n_jobs
-    if n_jobs == -1 and forest.n_estimators > jobs_limit:
-        n_jobs = jobs_limit
-    if n_jobs != -1 and n_jobs > jobs_limit:
-        n_jobs = jobs_limit
-    print("n_jobs: %s" % n_jobs)
-    res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
-        delayed(_predict_by_tree)(tree, X_test)
-        for tree in forest)
-    pred = np.array(res, dtype=dtype)
-    return pred
-
-
 def random_forest_error(
         forest,
         X_train,
@@ -288,8 +214,6 @@ def random_forest_error(
         calibrate=True,
         memory_constrained=False,
         memory_limit=None,
-        parallel=True,
-        jobs_limit=100,
 ):
     """
     Calculate error bars from scikit-learn RandomForest estimators.
@@ -355,15 +279,30 @@ def random_forest_error(
     if inbag is None:
         inbag = calc_inbag(X_train.shape[0], forest)
 
+    import datetime
     print(datetime.datetime.now())
-    print("pred with all trees starting, calibrate: %s" % calibrate)
+    print("pred with all trees starting")
 
     dtype = 'int'
 
-    if parallel:
-        pred = _pred_with_trees_parallel(X_test, forest, jobs_limit, dtype).T
-    else:
-        pred = np.array([tree.predict(X_test) for tree in forest], dtype=dtype).T
+    pred = np.array([tree.predict(X_test) for tree in forest], dtype=dtype).T
+
+
+    def _predict_by_tree(_tree, _X):
+        return _tree.predict(_X).round(0).astype(dtype)
+
+    # Parallel loop, returns values as a list
+    # job_limit = 100
+    # n_jobs = forest.n_jobs
+    # if n_jobs == -1 and forest.n_estimators > job_limit:
+    #     n_jobs = job_limit
+    # if n_jobs != -1 and n_jobs > job_limit:
+    #     n_jobs = job_limit
+    # print("n_jobs: %s" % n_jobs)
+    # res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
+    #     delayed(_predict_by_tree)(tree, X_test)
+    #     for tree in forest)
+    # pred = np.array(res, dtype=dtype).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
@@ -374,25 +313,10 @@ def random_forest_error(
     pred_mean = np.mean(pred, 0, dtype=dtype)
     pred_centered = (pred - pred_mean)
     n_trees = forest.n_estimators
-
-    ######################################################## _core_computation
-    print(datetime.datetime.now())
-    print("_core_computation")
-    # V_IJ = _core_computation(
-    #     X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
-    # )
-    # V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(dtype)
-
-    if not memory_constrained:
-        V_IJ = _core_computation(
-            X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
-        )
-        V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(dtype)
-    else:
-        if not memory_limit:
-            raise ValueError("If memory_constrained=True, must provide", "memory_limit.")
-        V_IJ, V_IJ_unbiased = _cal_V_IJ_and_unbiased_by_chunk(X_train, X_test, inbag, pred_centered, n_trees,
-                                                              memory_limit, dtype)
+    V_IJ = _core_computation(
+        X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
+    )
+    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(dtype)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
@@ -435,8 +359,6 @@ def random_forest_error(
             calibrate=False,
             memory_constrained=memory_constrained,
             memory_limit=memory_limit,
-            parallel=parallel,
-            jobs_limit=jobs_limit
         )
         # Use this second set of variance estimates
         # to estimate scale of Monte Carlo noise
