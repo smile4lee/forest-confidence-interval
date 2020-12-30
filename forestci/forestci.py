@@ -165,7 +165,7 @@ def _core_computation(
         print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0).round(0).astype(int)
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
             for chunk in chunks
         ]
     )
@@ -201,7 +201,7 @@ def _bias_correction(V_IJ, inbag, pred_centered, n_trees):
         - np.square(inbag[0:n_trees].mean(axis=1)).T.view()
     )
     boot_var = np.square(pred_centered).sum(axis=1) / n_trees
-    bias_correction = n_train_samples * n_var * boot_var / n_trees
+    bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(int)
     V_IJ_unbiased = V_IJ - bias_correction
     return V_IJ_unbiased
 
@@ -283,13 +283,16 @@ def random_forest_error(
     print(datetime.datetime.now())
     print("pred with all trees starting")
 
-    # pred = np.array([tree.predict(X_test) for tree in forest]).T.round(0).astype(int)
+    dtype = 'int'
+
+    # pred = np.array([tree.predict(X_test) for tree in forest], dtype=dtype)
+
 
     def _predict_by_tree(_tree, _X):
-        return _tree.predict(_X)
+        return _tree.predict(_X).round(0).astype(dtype)
 
     # Parallel loop, returns values as a list
-    job_limit = 300
+    job_limit = 100
     n_jobs = forest.n_jobs
     if n_jobs == -1 and forest.n_estimators > job_limit:
         n_jobs = job_limit
@@ -299,7 +302,7 @@ def random_forest_error(
     res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
         delayed(_predict_by_tree)(tree, X_test)
         for tree in forest)
-    pred = np.array(res).T.round(0).astype(int)
+    pred = np.array(res, dtype=dtype).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
@@ -307,13 +310,13 @@ def random_forest_error(
     print(datetime.datetime.now())
     print("pred with all trees finished")
 
-    pred_mean = np.mean(pred, 0).round(0).astype(int)
+    pred_mean = np.mean(pred, 0, dtype=dtype)
     pred_centered = (pred - pred_mean)
     n_trees = forest.n_estimators
     V_IJ = _core_computation(
         X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
     )
-    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(int)
+    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(dtype)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
