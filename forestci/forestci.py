@@ -166,7 +166,7 @@ def _core_computation(
         print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int32')
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
             for chunk in chunks
         ]
     )
@@ -213,7 +213,7 @@ def _cal_V_IJ_and_unbiased_by_chunk(X_train,
         pred_centered,
         n_trees,
         memory_limit=None,
-        dtype='int32'):
+        dtype='int'):
 
     # Assumes double precision float
     chunk_size = int((memory_limit * 1e6) / (8.0 * X_train.shape[0]))
@@ -236,7 +236,7 @@ def _cal_V_IJ_and_unbiased_by_chunk(X_train,
     print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int32')
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
             for chunk in chunks
         ]
     )
@@ -262,7 +262,7 @@ def _cal_V_IJ_and_unbiased_by_chunk(X_train,
     return V_IJ, V_IJ_unbiased
 
 
-def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int32'):
+def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int'):
     def _predict_by_tree(_tree, _X):
         return _tree.predict(_X).astype(dtype)
 
@@ -273,7 +273,7 @@ def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int32'):
     if n_jobs != -1 and n_jobs > jobs_limit:
         n_jobs = jobs_limit
     print("n_jobs: %s" % n_jobs)
-    res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='processes')(
+    res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
         delayed(_predict_by_tree)(tree, X_test)
         for tree in forest)
     pred = np.array(res, dtype=dtype)
@@ -358,7 +358,7 @@ def random_forest_error(
     print(datetime.datetime.now())
     print("pred with all trees starting, parallel: %s, calibrate: %s" % (parallel, calibrate))
 
-    dtype = 'int32'
+    dtype = 'int'
 
     if parallel:
         pred = _pred_with_trees_parallel(X_test, forest, jobs_limit, dtype).T
