@@ -169,7 +169,7 @@ def _core_computation(
         print("Number of chunks: %d" % (n_chunks))
     V_IJ = np.concatenate(
         [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
+            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0)
             for chunk in chunks
         ]
     )
@@ -177,8 +177,8 @@ def _core_computation(
     return V_IJ
 
 
-def _parallel_chunk_core_cal_V_IJ(inbag, pred_centered, chunk, n_trees, dtype='int'):
-    return np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype=dtype)
+def _parallel_chunk_core_cal_V_IJ(inbag, pred_centered, chunk, n_trees):
+    return np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0)
 
 
 def _bias_correction(V_IJ, inbag, pred_centered, n_trees):
@@ -222,8 +222,7 @@ def _core_computation_parallel(X_train,
                                n_trees,
                                memory_limit=None,
                                jobs_limit=100,
-                               verbose=0,
-                               dtype='int'):
+                               verbose=0):
     # Assumes double precision float
     chunk_size = int((memory_limit * 1e6) / (8.0 * X_train.shape[0]))
 
@@ -247,15 +246,15 @@ def _core_computation_parallel(X_train,
     n_chunks = len(chunks)
     n_jobs = min(n_chunks, jobs_limit)
     res = Parallel(n_jobs=n_jobs, verbose=verbose, prefer='threads')(
-        delayed(_parallel_chunk_core_cal_V_IJ)(inbag, pred_centered, chunk, n_trees, dtype)
+        delayed(_parallel_chunk_core_cal_V_IJ)(inbag, pred_centered, chunk, n_trees)
         for chunk in chunks)
     V_IJ = np.concatenate(res, axis=0)
     return V_IJ
 
 
-def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int'):
+def _pred_with_trees_parallel(X_test, forest, jobs_limit=100):
     def _predict_by_tree(_tree, _X):
-        return _tree.predict(_X).astype(dtype)
+        return _tree.predict(_X)
 
     # Parallel loop, returns values as a list
     n_jobs = forest.n_jobs
@@ -267,7 +266,7 @@ def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int'):
     res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
         delayed(_predict_by_tree)(tree, X_test)
         for tree in forest)
-    pred = np.array(res, dtype=dtype)
+    pred = np.array(res)
     return pred
 
 
@@ -281,6 +280,7 @@ def random_forest_error(
         memory_limit=None,
         parallel=True,
         jobs_limit=100,
+        scale=1,
 ):
     """
     Calculate error bars from scikit-learn RandomForest estimators.
@@ -349,12 +349,10 @@ def random_forest_error(
     # print(datetime.datetime.now())
     # print("pred with all trees starting, parallel: %s, calibrate: %s" % (parallel, calibrate))
 
-    dtype = 'int'
-
     if parallel:
-        pred = _pred_with_trees_parallel(X_test, forest, jobs_limit, dtype).T
+        pred = _pred_with_trees_parallel(X_test, forest, jobs_limit).T
     else:
-        pred = np.array([tree.predict(X_test) for tree in forest], dtype=dtype).T
+        pred = np.array([tree.predict(X_test) for tree in forest]).T
 
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
@@ -362,7 +360,7 @@ def random_forest_error(
     # print(datetime.datetime.now())
     # print("pred with all trees finished")
 
-    pred_mean = np.mean(pred, 0, dtype=dtype)
+    pred_mean = np.mean(pred, 0)
     pred_centered = (pred - pred_mean)
     n_trees = forest.n_estimators
 
@@ -372,7 +370,7 @@ def random_forest_error(
     # V_IJ = _core_computation(
     #     X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
     # )
-    # V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(dtype)
+    # V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees)
 
     if not memory_constrained:
         V_IJ = _core_computation(
@@ -384,10 +382,9 @@ def random_forest_error(
         V_IJ = _core_computation_parallel(X_train, X_test, inbag, pred_centered, n_trees,
                                           memory_limit,
                                           jobs_limit=jobs_limit,
-                                          verbose=forest.verbose,
-                                          dtype=dtype)
+                                          verbose=forest.verbose)
 
-    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees).round(0).astype(dtype)
+    V_IJ_unbiased = _bias_correction(V_IJ, inbag, pred_centered, n_trees)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
@@ -409,7 +406,7 @@ def random_forest_error(
         print("No calibration with n_samples <= 20")
         return V_IJ_unbiased
     if calibrate:
-
+        print("calibration with scale: %s" % scale)
         calibration_ratio = 2
         n_sample = np.ceil(n_trees / calibration_ratio)
         new_forest = copy.deepcopy(forest)
@@ -433,6 +430,9 @@ def random_forest_error(
             parallel=parallel,
             jobs_limit=jobs_limit
         )
+        # uses scale to avoid overflow errors
+        results_ss = results_ss * scale
+        V_IJ_unbiased = V_IJ_unbiased * scale
         # Use this second set of variance estimates
         # to estimate scale of Monte Carlo noise
         sigma2_ss = np.mean((results_ss - V_IJ_unbiased) ** 2)

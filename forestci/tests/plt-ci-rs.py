@@ -44,8 +44,8 @@ from sklearn.model_selection import train_test_split
 # In[2]:
 
 
-var = "rs_clim_weat"
-# var = "rs"
+# var = "rs_clim_weat"
+var = "rs"
 
 in_csv = r"/root/onedrive-ttu/research/brsoy.hpcc/train.{0}/tuned/out.corr/brsoy-yield-input.training.pred.csv".format(
     var)
@@ -64,29 +64,34 @@ pd.options.display.float_format = '{:.3f}'.format
 
 
 # rs_clim_weat
-feature_columns = ['C_cld_10', 'C_cld_11', 'C_cld_12', 'C_cld_4', 'C_cld_5', 'C_dtr_1', 'C_dtr_10', 'C_dtr_11',
-                   'C_dtr_12', 'C_dtr_2', 'C_dtr_3', 'C_dtr_4', 'C_dtr_5', 'C_pet_10', 'C_pet_11', 'C_pet_12',
-                   'C_pet_3', 'C_pet_4', 'C_pet_5', 'C_pre_10', 'C_pre_11', 'C_pre_12', 'C_pre_2', 'C_pre_4', 'C_pre_5',
-                   'C_tmn_1', 'C_vap_10', 'C_wet_10', 'C_wet_11', 'C_wet_4', 'C_wet_5', 'L_EVI_avmin25',
-                   'L_EVI_deltaloss', 'L_EVI_maxgain', 'L_EVI_mingain', 'L_EVI_minloss', 'L_EVI_sd', 'L_NDVI_av2550',
-                   'L_NDVI_deltagain', 'L_NDVI_deltaloss', 'L_NDVI_maxloss', 'L_NDVI_prc75', 'L_NDWI_avmin10',
-                   'L_NDWI_deltagain', 'L_NDWI_deltaloss', 'L_NDWI_max', 'L_NDWI_minloss', 'L_NDWI_sd', 'L_green_sd',
-                   'L_nir_maxloss', 'L_nir_min', 'L_nir_prc75', 'L_nir_sd', 'L_rankNDVI_green_av90max',
-                   'L_rankNDVI_swir1_av5090', 'L_rankNDVI_swir2_av5090', 'L_rankNDVI_swir2_max', 'L_swir1_maxloss',
-                   'L_swir1_minloss', 'L_swir2_deltagain', 'L_swir2_sd', 'M_EVI_deltaloss', 'M_EVI_minloss',
-                   'M_NDVI_av2550', 'M_NDVI_av90max', 'M_NDVI_deltagain', 'M_NDVI_maxgain', 'M_NDVI_sd',
-                   'M_NDWI_deltagain', 'M_NDWI_min', 'M_NDWI_reg', 'M_NDWI_sd', 'M_nir_reg', 'M_rankNDVI_green_av75max',
-                   'M_rankNDVI_nir_av75max', 'M_rankNDVI_swir1_av75max', 'M_swir1_av1025', 'T_dem', 'T_slope',
-                   'W_cld_1', 'W_cld_10', 'W_cld_11', 'W_cld_12', 'W_cld_2', 'W_cld_3', 'W_cld_4', 'W_cld_5', 'W_dtr_1',
-                   'W_dtr_10', 'W_dtr_11', 'W_dtr_12', 'W_dtr_2', 'W_dtr_3', 'W_dtr_4', 'W_dtr_5', 'W_pet_10',
-                   'W_pet_11', 'W_pet_12', 'W_pet_2', 'W_pet_3', 'W_pet_4', 'W_pre_1', 'W_pre_10', 'W_pre_11',
-                   'W_pre_12', 'W_pre_2', 'W_pre_3', 'W_pre_4', 'W_pre_5', 'W_tmn_1', 'W_tmn_10', 'W_tmn_12', 'W_tmn_2',
-                   'W_tmn_3', 'W_tmn_4', 'W_tmn_5', 'W_tmx_3', 'W_vap_2', 'W_wet_1', 'W_wet_10', 'W_wet_11', 'W_wet_12',
-                   'W_wet_2', 'W_wet_3', 'W_wet_4', 'W_wet_5']
+# feature_columns = ['C_cld_10', 'C_cld_11', 'C_cld_12', 'C_cld_4', 'C_cld_5', 'C_dtr_1', 'C_dtr_10', 'C_dtr_11',
+#                    'C_dtr_12', 'C_dtr_2', 'C_dtr_3', 'C_dtr_4', 'C_dtr_5', 'C_pet_10', 'C_pet_11', 'C_pet_12',
+#                    'C_pet_3', 'C_pet_4', 'C_pet_5', 'C_pre_10', 'C_pre_11', 'C_pre_12', 'C_pre_2', 'C_pre_4',
+#                   'C_pre_5',
+#                    'C_tmn_1', 'C_vap_10', 'C_wet_10', 'C_wet_11', 'C_wet_4', 'C_wet_5', 'L_EVI_avmin25',
+#                    'L_EVI_deltaloss', 'L_EVI_maxgain', 'L_EVI_mingain', 'L_EVI_minloss', 'L_EVI_sd', 'L_NDVI_av2550',
+#                    'L_NDVI_deltagain', 'L_NDVI_deltaloss', 'L_NDVI_maxloss', 'L_NDVI_prc75', 'L_NDWI_avmin10',
+#                    'L_NDWI_deltagain', 'L_NDWI_deltaloss', 'L_NDWI_max', 'L_NDWI_minloss', 'L_NDWI_sd', 'L_green_sd',
+#                    'L_nir_maxloss', 'L_nir_min', 'L_nir_prc75', 'L_nir_sd', 'L_rankNDVI_green_av90max',
+#                    'L_rankNDVI_swir1_av5090', 'L_rankNDVI_swir2_av5090', 'L_rankNDVI_swir2_max', 'L_swir1_maxloss',
+#                    'L_swir1_minloss', 'L_swir2_deltagain', 'L_swir2_sd', 'M_EVI_deltaloss', 'M_EVI_minloss',
+#                    'M_NDVI_av2550', 'M_NDVI_av90max', 'M_NDVI_deltagain', 'M_NDVI_maxgain', 'M_NDVI_sd',
+#                    'M_NDWI_deltagain', 'M_NDWI_min', 'M_NDWI_reg', 'M_NDWI_sd', 'M_nir_reg',
+#                   'M_rankNDVI_green_av75max',
+#                    'M_rankNDVI_nir_av75max', 'M_rankNDVI_swir1_av75max', 'M_swir1_av1025', 'T_dem', 'T_slope',
+#                    'W_cld_1', 'W_cld_10', 'W_cld_11', 'W_cld_12', 'W_cld_2', 'W_cld_3', 'W_cld_4', 'W_cld_5',
+#                   'W_dtr_1',
+#                    'W_dtr_10', 'W_dtr_11', 'W_dtr_12', 'W_dtr_2', 'W_dtr_3', 'W_dtr_4', 'W_dtr_5', 'W_pet_10',
+#                    'W_pet_11', 'W_pet_12', 'W_pet_2', 'W_pet_3', 'W_pet_4', 'W_pre_1', 'W_pre_10', 'W_pre_11',
+#                    'W_pre_12', 'W_pre_2', 'W_pre_3', 'W_pre_4', 'W_pre_5', 'W_tmn_1', 'W_tmn_10', 'W_tmn_12',
+#                   'W_tmn_2',
+#                    'W_tmn_3', 'W_tmn_4', 'W_tmn_5', 'W_tmx_3', 'W_vap_2', 'W_wet_1', 'W_wet_10', 'W_wet_11',
+#                   'W_wet_12',
+#                    'W_wet_2', 'W_wet_3', 'W_wet_4', 'W_wet_5']
 # feature_columns = ['C_dtr_1', 'C_dtr_10', 'C_dtr_11', 'C_dtr_12', 'C_dtr_2', 'C_dtr_3', 'C_dtr_4', 'C_dtr_5', 'C_cld_10', 'C_cld_11', 'C_cld_12', 'C_cld_4', 'C_cld_5', 'C_pet_10', 'C_pet_11', 'C_pet_12', 'C_pet_3', 'C_pet_4', 'C_pet_5', 'C_pre_10', 'C_pre_11', 'C_pre_12', 'C_pre_2', 'C_pre_4', 'C_pre_5', 'C_tmn_1', 'C_vap_10', 'C_wet_10', 'C_wet_11', 'C_wet_4', 'C_wet_5', 'L_EVI_avmin25', 'L_EVI_deltaloss', 'L_EVI_maxgain', 'L_EVI_mingain', 'L_EVI_minloss', 'L_EVI_sd', 'L_NDVI_av2550', 'L_NDVI_deltagain', 'L_NDVI_deltaloss', 'L_NDVI_maxloss', 'L_NDVI_prc75', 'L_NDWI_avmin10', 'L_NDWI_deltagain', 'L_NDWI_deltaloss', 'L_NDWI_max', 'L_NDWI_minloss', 'L_NDWI_sd', 'L_green_sd', 'L_nir_maxloss', 'L_nir_min', 'L_nir_prc75', 'L_nir_sd', 'L_rankNDVI_green_av90max', 'L_rankNDVI_swir1_av5090', 'L_rankNDVI_swir2_av5090', 'L_rankNDVI_swir2_max', 'L_swir1_maxloss', 'L_swir1_minloss', 'L_swir2_deltagain', 'L_swir2_sd', 'M_EVI_deltaloss', 'M_EVI_minloss', 'M_NDVI_av2550', 'M_NDVI_av90max', 'M_NDVI_deltagain', 'M_NDVI_maxgain', 'M_NDVI_sd', 'M_NDWI_deltagain', 'M_NDWI_min', 'M_NDWI_reg', 'M_NDWI_sd', 'M_nir_reg', 'M_rankNDVI_green_av75max', 'M_rankNDVI_nir_av75max', 'M_rankNDVI_swir1_av75max', 'M_swir1_av1025', 'T_dem', 'T_slope', 'W_cld_1', 'W_cld_10', 'W_cld_11', 'W_cld_12', 'W_cld_2', 'W_cld_3', 'W_cld_4', 'W_cld_5', 'W_dtr_1', 'W_dtr_10', 'W_dtr_11', 'W_dtr_12', 'W_dtr_2', 'W_dtr_3', 'W_dtr_4', 'W_dtr_5', 'W_pet_10', 'W_pet_11', 'W_pet_12', 'W_pet_2', 'W_pet_3', 'W_pet_4', 'W_pre_1', 'W_pre_10', 'W_pre_11', 'W_pre_12', 'W_pre_2', 'W_pre_3', 'W_pre_4', 'W_pre_5', 'W_tmn_1', 'W_tmn_10', 'W_tmn_12', 'W_tmn_2', 'W_tmn_3', 'W_tmn_4', 'W_tmn_5', 'W_tmx_3', 'W_vap_2', 'W_wet_1', 'W_wet_10', 'W_wet_11', 'W_wet_12', 'W_wet_2', 'W_wet_3', 'W_wet_4', 'W_wet_5']
 
 # rs
-# feature_columns = ['L_EVI_avmin25', 'L_EVI_deltaloss', 'L_EVI_maxgain', 'L_EVI_mingain', 'L_EVI_minloss', 'L_EVI_sd', 'L_NDVI_av2550', 'L_NDVI_deltagain', 'L_NDVI_deltaloss', 'L_NDVI_maxloss', 'L_NDVI_prc75', 'L_NDWI_avmin10', 'L_NDWI_deltagain', 'L_NDWI_deltaloss', 'L_NDWI_max', 'L_NDWI_minloss', 'L_NDWI_sd', 'L_green_sd', 'L_nir_maxloss', 'L_nir_min', 'L_nir_prc75', 'L_nir_sd', 'L_rankNDVI_green_av90max', 'L_rankNDVI_swir1_av5090', 'L_rankNDVI_swir2_av5090', 'L_rankNDVI_swir2_max', 'L_swir1_maxloss', 'L_swir1_minloss', 'L_swir2_deltagain', 'L_swir2_sd', 'M_EVI_deltaloss', 'M_EVI_minloss', 'M_NDVI_av2550', 'M_NDVI_av90max', 'M_NDVI_deltagain', 'M_NDVI_maxgain', 'M_NDVI_sd', 'M_NDWI_deltagain', 'M_NDWI_min', 'M_NDWI_reg', 'M_NDWI_sd', 'M_nir_reg', 'M_rankNDVI_green_av75max', 'M_rankNDVI_nir_av75max', 'M_rankNDVI_swir1_av75max', 'M_swir1_av1025', 'T_dem', 'T_slope']
+feature_columns = ['L_EVI_avmin25', 'L_EVI_deltaloss', 'L_EVI_maxgain', 'L_EVI_mingain', 'L_EVI_minloss', 'L_EVI_sd', 'L_NDVI_av2550', 'L_NDVI_deltagain', 'L_NDVI_deltaloss', 'L_NDVI_maxloss', 'L_NDVI_prc75', 'L_NDWI_avmin10', 'L_NDWI_deltagain', 'L_NDWI_deltaloss', 'L_NDWI_max', 'L_NDWI_minloss', 'L_NDWI_sd', 'L_green_sd', 'L_nir_maxloss', 'L_nir_min', 'L_nir_prc75', 'L_nir_sd', 'L_rankNDVI_green_av90max', 'L_rankNDVI_swir1_av5090', 'L_rankNDVI_swir2_av5090', 'L_rankNDVI_swir2_max', 'L_swir1_maxloss', 'L_swir1_minloss', 'L_swir2_deltagain', 'L_swir2_sd', 'M_EVI_deltaloss', 'M_EVI_minloss', 'M_NDVI_av2550', 'M_NDVI_av90max', 'M_NDVI_deltagain', 'M_NDVI_maxgain', 'M_NDVI_sd', 'M_NDWI_deltagain', 'M_NDWI_min', 'M_NDWI_reg', 'M_NDWI_sd', 'M_nir_reg', 'M_rankNDVI_green_av75max', 'M_rankNDVI_nir_av75max', 'M_rankNDVI_swir1_av75max', 'M_swir1_av1025', 'T_dem', 'T_slope']
 
 
 # In[4]:
@@ -129,7 +134,7 @@ rfr = joblib.load(model_file)
 n_trees_list = [100, 200, 500, 1000, 1500, 2000]
 n_trees_list = [100]
 
-scale = 0.001
+scale = 1
 
 def do_fci(n_trees):
     # Calculate the variance
@@ -156,7 +161,7 @@ def do_fci(n_trees):
 
     pd.options.display.max_columns = df_test.shape[1]
     print(df_test.describe())
-    out_csv = r"out/out.{0}.{1}.csv".format(n_trees, scale)
+    out_csv = r"out.rs/out.{0}.{1}.csv".format(n_trees, scale)
     df_test.describe().to_csv(out_csv, index=True, header=True, sep=',', float_format='%.0f')
 
 
