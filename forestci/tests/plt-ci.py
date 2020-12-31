@@ -136,10 +136,11 @@ def do_fci(n_trees):
     rfr.n_estimators = n_trees
     rfr.fit(X_train, Y_train)
     pred_test = rfr.predict(X_test).round(0).astype(int)
-    mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test).round(0).astype(int)
-    # mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test,
-    #                                             memory_constrained=True,
-    #                                             memory_limit=1).round(0).astype(int)
+    # mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test).round(0).astype(int)
+    mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test,
+                                                memory_constrained=True,
+                                                memory_limit=1024).round(0).astype(int)
+
     # mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test, calibrate=False)
 
     df_test['pred_test'] = pred_test

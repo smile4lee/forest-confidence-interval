@@ -101,6 +101,8 @@ def _core_computation(
         memory_constrained=False,
         memory_limit=None,
         test_mode=False,
+        jobs_limit=100,
+        verbose=0
 ):
     """
     Helper function, that performs the core computation
@@ -162,15 +164,32 @@ def _core_computation(
     ]
     # print("Number of chunks: %d" % (len(chunks),))
 
+    n_chunks = len(chunks)
     if test_mode:
-        print("Number of chunks: %d" % (len(chunks),))
+        print("Number of chunks: %d" % (n_chunks))
     V_IJ = np.concatenate(
         [
             np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
             for chunk in chunks
         ]
     )
+
     return V_IJ
+
+
+def _chunk_core_cal_V_IJ_and_unbiased(inbag, pred_centered, chunk, n_trees, n_var, dtype='int'):
+    V_IJ = np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype=dtype)
+    n_train_samples = inbag.shape[0]
+
+    # boot_var = np.square(pred_centered).sum(axis=1) / n_trees
+    # bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(int)
+    # V_IJ_unbiased = V_IJ - bias_correction
+
+    boot_var = np.square(pred_centered[chunk]).sum(axis=1) / n_trees
+    bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(dtype)
+    V_IJ_unbiased = V_IJ - bias_correction
+
+    return V_IJ, V_IJ_unbiased
 
 
 def _bias_correction(V_IJ, inbag, pred_centered, n_trees):
@@ -207,17 +226,20 @@ def _bias_correction(V_IJ, inbag, pred_centered, n_trees):
     return V_IJ_unbiased
 
 
-def _cal_V_IJ_and_unbiased_by_chunk(X_train,
-        X_test,
-        inbag,
-        pred_centered,
-        n_trees,
-        memory_limit=None,
-        dtype='int'):
+def _core_computation_by_chunk(X_train,
+                               X_test,
+                               inbag,
+                               pred_centered,
+                               n_trees,
+                               memory_limit=None,
+                               jobs_limit=100,
+                               verbose=0,
+                               dtype='int'):
 
     # Assumes double precision float
     chunk_size = int((memory_limit * 1e6) / (8.0 * X_train.shape[0]))
 
+    # chunk_size = 1000
     if chunk_size == 0:
         min_limit = 8.0 * X_train.shape[0] / 1e6
         raise ValueError(
@@ -233,31 +255,21 @@ def _cal_V_IJ_and_unbiased_by_chunk(X_train,
     chunks = [
         inds[chunk_edges[i]: chunk_edges[i + 1]] for i in range(len(chunk_edges) - 1)
     ]
-    # print("Number of chunks: %d" % (len(chunks),))
-    V_IJ = np.concatenate(
-        [
-            np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
-            for chunk in chunks
-        ]
-    )
 
-    ######################################################## _bias_correction
-    # print(datetime.datetime.now())
-    # print("_bias_correction")
-    n_train_samples = inbag.shape[0]
     n_var = np.mean(
         np.square(inbag[0:n_trees]).mean(axis=1).T.view()
         - np.square(inbag[0:n_trees].mean(axis=1)).T.view()
     )
-    # boot_var = np.square(pred_centered).sum(axis=1) / n_trees
-    # bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(int)
-    # V_IJ_unbiased = V_IJ - bias_correction
 
-    V_IJ_unbiased = np.zeros(len(V_IJ), dtype=dtype)
-    for chunk in chunks:
-        boot_var = np.square(pred_centered[chunk]).sum(axis=1) / n_trees
-        bias_correction = (n_train_samples * n_var * boot_var / n_trees).round(0).astype(int)
-        V_IJ_unbiased[chunk] = V_IJ[chunk] - bias_correction
+    n_chunks = len(chunks)
+    n_jobs = min(n_chunks, jobs_limit)
+    res = Parallel(n_jobs=n_jobs, verbose=verbose, prefer='threads')(
+        delayed(_chunk_core_cal_V_IJ_and_unbiased)(inbag, pred_centered, chunk, n_trees, n_var, dtype)
+        for chunk in chunks)
+
+    V_IJ_list, V_IJ_unbiased_list = zip(*res)
+    V_IJ = np.concatenate(V_IJ_list, axis=0)
+    V_IJ_unbiased = np.concatenate(V_IJ_unbiased_list, axis=0)
 
     return V_IJ, V_IJ_unbiased
 
@@ -391,8 +403,11 @@ def random_forest_error(
     else:
         if not memory_limit:
             raise ValueError("If memory_constrained=True, must provide", "memory_limit.")
-        V_IJ, V_IJ_unbiased = _cal_V_IJ_and_unbiased_by_chunk(X_train, X_test, inbag, pred_centered, n_trees,
-                                                              memory_limit, dtype)
+        V_IJ, V_IJ_unbiased = _core_computation_by_chunk(X_train, X_test, inbag, pred_centered, n_trees,
+                                                         memory_limit,
+                                                         jobs_limit=jobs_limit,
+                                                         verbose=forest.verbose,
+                                                         dtype=dtype)
 
     import pandas as pd
     # df_tmp = pd.DataFrame()
