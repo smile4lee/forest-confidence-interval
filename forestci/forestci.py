@@ -153,14 +153,14 @@ def _core_computation(
             + "be greater than or equal to %.3e" % min_limit
         )
 
-    print("chunk_size: %s" % chunk_size)
+    # print("chunk_size: %s" % chunk_size)
 
     chunk_edges = np.arange(0, X_test.shape[0] + chunk_size, chunk_size)
     inds = range(X_test.shape[0])
     chunks = [
         inds[chunk_edges[i]: chunk_edges[i + 1]] for i in range(len(chunk_edges) - 1)
     ]
-    print("Number of chunks: %d" % (len(chunks),))
+    # print("Number of chunks: %d" % (len(chunks),))
 
     if test_mode:
         print("Number of chunks: %d" % (len(chunks),))
@@ -226,14 +226,14 @@ def _cal_V_IJ_and_unbiased_by_chunk(X_train,
             + "be greater than or equal to %.3e" % min_limit
         )
 
-    print("chunk_size: %s" % chunk_size)
+    # print("chunk_size: %s" % chunk_size)
 
     chunk_edges = np.arange(0, X_test.shape[0] + chunk_size, chunk_size)
     inds = range(X_test.shape[0])
     chunks = [
         inds[chunk_edges[i]: chunk_edges[i + 1]] for i in range(len(chunk_edges) - 1)
     ]
-    print("Number of chunks: %d" % (len(chunks),))
+    # print("Number of chunks: %d" % (len(chunks),))
     V_IJ = np.concatenate(
         [
             np.sum((np.dot(inbag - 1, pred_centered[chunk].T) / n_trees) ** 2, 0, dtype='int')
@@ -242,8 +242,8 @@ def _cal_V_IJ_and_unbiased_by_chunk(X_train,
     )
 
     ######################################################## _bias_correction
-    print(datetime.datetime.now())
-    print("_bias_correction")
+    # print(datetime.datetime.now())
+    # print("_bias_correction")
     n_train_samples = inbag.shape[0]
     n_var = np.mean(
         np.square(inbag[0:n_trees]).mean(axis=1).T.view()
@@ -272,7 +272,7 @@ def _pred_with_trees_parallel(X_test, forest, jobs_limit=100, dtype='int'):
         n_jobs = jobs_limit
     if n_jobs != -1 and n_jobs > jobs_limit:
         n_jobs = jobs_limit
-    print("n_jobs: %s" % n_jobs)
+    # print("n_jobs: %s" % n_jobs)
     res = Parallel(n_jobs=n_jobs, verbose=forest.verbose, prefer='threads')(
         delayed(_predict_by_tree)(tree, X_test)
         for tree in forest)
@@ -355,8 +355,8 @@ def random_forest_error(
     if inbag is None:
         inbag = calc_inbag(X_train.shape[0], forest)
 
-    print(datetime.datetime.now())
-    print("pred with all trees starting, parallel: %s, calibrate: %s" % (parallel, calibrate))
+    # print(datetime.datetime.now())
+    # print("pred with all trees starting, parallel: %s, calibrate: %s" % (parallel, calibrate))
 
     dtype = 'int'
 
@@ -368,16 +368,16 @@ def random_forest_error(
     # the final predictions in forest
     # pred_mean_t = np.mean(pred, axis=1)
 
-    print(datetime.datetime.now())
-    print("pred with all trees finished")
+    # print(datetime.datetime.now())
+    # print("pred with all trees finished")
 
     pred_mean = np.mean(pred, 0, dtype=dtype)
     pred_centered = (pred - pred_mean)
     n_trees = forest.n_estimators
 
     ######################################################## _core_computation
-    print(datetime.datetime.now())
-    print("_core_computation")
+    # print(datetime.datetime.now())
+    # print("_core_computation")
     # V_IJ = _core_computation(
     #     X_train, X_test, inbag, pred_centered, n_trees, memory_constrained, memory_limit
     # )
