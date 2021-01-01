@@ -100,9 +100,7 @@ def _core_computation(
         n_trees,
         memory_constrained=False,
         memory_limit=None,
-        test_mode=False,
-        jobs_limit=100,
-        verbose=0
+        test_mode=False
 ):
     """
     Helper function, that performs the core computation
@@ -280,7 +278,7 @@ def random_forest_error(
         memory_limit=None,
         parallel=True,
         jobs_limit=100,
-        scale=1,
+        calibration_scale=1,
 ):
     """
     Calculate error bars from scikit-learn RandomForest estimators.
@@ -406,7 +404,7 @@ def random_forest_error(
         print("No calibration with n_samples <= 20")
         return V_IJ_unbiased
     if calibrate:
-        print("calibration with scale: %s" % scale)
+        print("calibration with scale: %s" % calibration_scale)
         calibration_ratio = 2
         n_sample = np.ceil(n_trees / calibration_ratio)
         new_forest = copy.deepcopy(forest)
@@ -431,8 +429,8 @@ def random_forest_error(
             jobs_limit=jobs_limit
         )
         # uses scale to avoid overflow errors
-        results_ss = results_ss * scale
-        V_IJ_unbiased = V_IJ_unbiased * scale
+        results_ss = results_ss * calibration_scale
+        V_IJ_unbiased = V_IJ_unbiased * calibration_scale
         # Use this second set of variance estimates
         # to estimate scale of Monte Carlo noise
         sigma2_ss = np.mean((results_ss - V_IJ_unbiased) ** 2)
@@ -442,4 +440,4 @@ def random_forest_error(
         # Use Monte Carlo noise scale estimate for empirical Bayes calibration
         V_IJ_calibrated = calibrateEB(V_IJ_unbiased, sigma2)
 
-        return V_IJ_calibrated  # , pred_mean_t
+        return V_IJ_calibrated / calibration_scale  # , pred_mean_t

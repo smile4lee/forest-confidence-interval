@@ -134,7 +134,10 @@ rfr = joblib.load(model_file)
 n_trees_list = [100, 200, 500, 1000, 1500, 2000]
 n_trees_list = [100]
 
-scale = 1
+calibration_scale = 0.000001
+# calibration_scale = 0.001
+# calibration_scale = 1
+
 
 def do_fci(n_trees):
     # Calculate the variance
@@ -146,8 +149,7 @@ def do_fci(n_trees):
     mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test,
                                                 memory_constrained=True,
                                                 memory_limit=1024,
-                                                scale=scale)
-    mpg_V_IJ_unbiased = (mpg_V_IJ_unbiased / scale).round(0).astype(int)
+                                                calibration_scale=calibration_scale).round(0).astype(int)
 
     # mpg_V_IJ_unbiased = fci.random_forest_error(rfr, X_train, X_test, calibrate=False)
 
@@ -161,7 +163,7 @@ def do_fci(n_trees):
 
     pd.options.display.max_columns = df_test.shape[1]
     print(df_test.describe())
-    out_csv = r"out.rs/out.{0}.{1}.csv".format(n_trees, scale)
+    out_csv = r"out.rs/out.{0}.{1}.csv".format(n_trees, calibration_scale)
     df_test.describe().to_csv(out_csv, index=True, header=True, sep=',', float_format='%.0f')
 
 

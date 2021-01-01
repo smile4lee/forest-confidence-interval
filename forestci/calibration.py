@@ -125,6 +125,8 @@ def gfit(X, sigma, p=5, nbin=200, unif_fraction=0.1):
     g_eta = ((1 - unif_fraction) * g_eta_main +
              unif_fraction * mask) / sum(mask)
 
+    # print("g_eta_raw: %s, %s" % (min(g_eta_raw), max(g_eta_raw)))
+    # print("g_eta_main: %s, %s" % (min(g_eta_main), max(g_eta_main)))
     return xvals, g_eta
 
 
@@ -181,6 +183,14 @@ def calibrateEB(variances, sigma2):
                                 np.arange(0, 102, 2))
         calib_y = list(map(part, calib_x))
         calib_all = np.interp(variances, calib_x, calib_y)
+
+        # print("eb_prior[0]: %s, %s" % (min(eb_prior[0]), max(eb_prior[0])))
+        # print("eb_prior[1]: %s, %s" % (min(eb_prior[1]), max(eb_prior[1])))
+        # print("sigma: %s" % sigma)
+        # print("variances: %s, %s" % (min(variances), max(variances)))
+        # print("calib_x: %s, %s" % (min(calib_x), max(calib_x)))
+        # print("calib_y: %s, %s" % (min(calib_y), max(calib_y)))
+        # print("calib_all: %s, %s" % (min(calib_all), max(calib_all)))
     else:
         calib_all = list(map(part, variances))
 
