@@ -441,3 +441,29 @@ def random_forest_error(
         V_IJ_calibrated = calibrateEB(V_IJ_unbiased, sigma2)
 
         return V_IJ_calibrated / calibration_scale  # , pred_mean_t
+
+
+def random_forest_standard_error(
+        forest,
+        X_test,
+        parallel=True,
+        jobs_limit=100,
+):
+    print(datetime.datetime.now())
+    print("pred with all trees starting, parallel: %s" % parallel)
+
+    if parallel:
+        pred = _pred_with_trees_parallel(X_test, forest, jobs_limit).T
+    else:
+        pred = np.array([tree.predict(X_test) for tree in forest]).T
+
+    # the final predictions in forest
+    pred_mean = np.mean(pred, axis=1)
+
+    # population standard error
+    pred_se = np.std(pred, axis=1)
+
+    print(datetime.datetime.now())
+    print("pred with all trees finished")
+
+    return pred_mean, pred_se
