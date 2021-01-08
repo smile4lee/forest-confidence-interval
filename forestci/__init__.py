@@ -3,4 +3,4 @@ from .forestci import (calc_inbag, random_forest_error,
 
 from .version import __version__  # noqa
 
-__all__ = ("calc_inbag", "random_forest_error")
+__all__ = ("calc_inbag", "random_forest_error", "random_forest_standard_error")
